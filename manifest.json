@@ -1,0 +1,10 @@
+{
+	"id": "markdownlint",
+	"name": "Markdownlint",
+	"version": "0.0.1",
+	"minAppVersion": "1.7.2",
+	"description": "Use markdownlint to make the contents of your files more consistent",
+	"author": "ebullient",
+	"authorUrl": "https://github.com/ebullient",
+	"isDesktopOnly": false
+}

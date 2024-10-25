@@ -1,0 +1,36 @@
+name: Build and Test Obsidian Plugin
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '**.mjs'
+      - '**.css'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.ts'
+      - '**.json'
+      - '**.mjs'
+      - '**.css'
+
+permissions: read-all
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Build and Test
+      id: build
+      run: |
+        npm install
+        npm run build
