@@ -1,4 +1,4 @@
-import { parseYaml, Plugin, TFile } from 'obsidian';
+import { parseYaml, Plugin } from 'obsidian';
 import markdownlintLibrary, { Configuration, LintError, Options } from 'markdownlint';
 import { applyFixes } from 'markdownlint-rule-helpers';
 import { linter, Diagnostic, LintSource } from "@codemirror/lint";
@@ -75,8 +75,6 @@ export class MarkdownlintPlugin extends Plugin {
 
         // TODO: commands:
         // - provide default config file (setting)
-        // - reload configuration file
-        // - lint current file
     }
 
     async onunload(): Promise<void> {
@@ -126,11 +124,10 @@ export class MarkdownlintPlugin extends Plugin {
         }
     }
 
-    doFixes(f: TFile, content: string, results: LintError[]): string {
+    doFixes(content: string, results: LintError[]): string {
         if (results.length !== 0) {
             const patched = applyFixes(content, results);
             if (patched !== content) {
-                console.log('🔧 Fixed', f.path);
                 return patched;
             }
         }
@@ -142,7 +139,6 @@ export class MarkdownlintPlugin extends Plugin {
         if (!this.config) {
             return;
         }
-        const activeFile = this.app.workspace.getActiveFile();
         const doc = view.state.doc;
 
         const { fixable, unfixable } = this.doLint(doc.toString());
@@ -163,9 +159,10 @@ export class MarkdownlintPlugin extends Plugin {
             diagnostics.push(diagnostic);
         }
 
-        await this.app.vault.process(activeFile, (content) => {
-            return this.doFixes(activeFile, content, fixable);
-        });
+        if (fixable.length > 0) {
+            const fixed = this.doFixes(doc.toString(), fixable);
+            view.dispatch({ changes: { from: 0, to: doc.length, insert: fixed } });
+        }
         return diagnostics;
     };
 }
