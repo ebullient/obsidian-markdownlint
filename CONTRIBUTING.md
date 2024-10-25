@@ -29,7 +29,7 @@ npm run build
 npm run dev
 ```
 
-Set an OUTDIR value in a `.env` file to have built artifacts written to the location of your choice, like the markdownlint directory in .obsidian/plugins of a vault.
+Set an OUTDIR value in a `.env` file to have built artifacts written to the location of your choice, like the markdownlint directory in .obsidian/plugins of a vault. (Install the plugin first)
 
 Example:
 

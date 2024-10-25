@@ -6,6 +6,7 @@
   "scripts": {
     "prebuild": "npx eslint",
     "build": "node ./esbuild.config.mjs production",
+    "postbuild": "cp -v manifest.json README.md styles.css build",
     "dev": "node ./esbuild.config.mjs",
     "preversion": "npm run build",
     "version": "auto-changelog -p",

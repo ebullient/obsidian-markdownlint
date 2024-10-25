@@ -41,9 +41,14 @@ const parameters = {
     outdir: dir,
 };
 
-copyFileSync("styles.css", `${dir}/styles.css`);
-copyFileSync("manifest.json", `${dir}/manifest.json`);
-copyFileSync("README.md", `${dir}/README.md`);
+try {
+    copyFileSync("styles.css", `${dir}/styles.css`);
+    copyFileSync("manifest.json", `${dir}/manifest.json`);
+    copyFileSync("README.md", `${dir}/README.md`);
+} catch(e) {
+    console.error(e);
+}
+
 
 if (prod) {
     await esbuild.build(parameters).catch((x) => {
