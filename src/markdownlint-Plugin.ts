@@ -1,7 +1,7 @@
 import { parseYaml, Plugin } from 'obsidian';
 import markdownlintLibrary, { Configuration, LintError, Options } from 'markdownlint';
 import { applyFixes } from 'markdownlint-rule-helpers';
-import { linter, Diagnostic, LintSource } from "@codemirror/lint";
+import { linter, Diagnostic, LintSource, Action } from "@codemirror/lint";
 import { Extension } from '@codemirror/state';
 
 export class MarkdownlintPlugin extends Plugin {
@@ -58,7 +58,9 @@ export class MarkdownlintPlugin extends Plugin {
             "using markdownlint v" + markdownlintLibrary.getVersion());
 
         this.registerEditorExtension(this.cmExtension);
-        this.cmExtension.push(linter(this.lintSource));
+        this.cmExtension.push(linter(this.lintSource, {
+            "delay": 1500
+        }));
 
         this.app.workspace.onLayoutReady(async () => {
             await this.findConfig();
@@ -100,7 +102,7 @@ export class MarkdownlintPlugin extends Plugin {
         console.log('🛠️ markdownlint:', name, this.config);
     }
 
-    doLint(content: string): { fixable: LintError[], unfixable: LintError[] } {
+    doLint(content: string): LintError[] {
         const options: Options = {
             "strings": {
                 "content": content
@@ -108,20 +110,10 @@ export class MarkdownlintPlugin extends Plugin {
             "config": this.config,
             "handleRuleFailures": true
         };
-        const results = markdownlintLibrary.sync(options);
-        const fixable: LintError[] = [];
-        const unfixable: LintError[] = [];
-        results.content.forEach((e) => {
-            if (e.fixInfo) {
-                fixable.push(e);
-            } else {
-                unfixable.push(e);
-            }
-        });
-        return {
-            fixable,
-            unfixable
-        }
+        const lintResult = markdownlintLibrary.sync(options);
+        console.log('👀 LP Lint results', '\n'+lintResult.toString());
+
+        return lintResult.content;
     }
 
     doFixes(content: string, results: LintError[]): string {
@@ -140,29 +132,32 @@ export class MarkdownlintPlugin extends Plugin {
             return;
         }
         const doc = view.state.doc;
-
-        const { fixable, unfixable } = this.doLint(doc.toString());
-        console.log('👀 LP Lint results', 'fixable', fixable, 'unfixable', unfixable);
-
         const diagnostics: Diagnostic[] = [];
-        for (const result of unfixable) {
+        const lintErrors = this.doLint(doc.toString());
+
+        for (const error of lintErrors) {
             const diagnostic: Diagnostic = {
-                from: doc.line(result.lineNumber).from,
-                to: doc.line(result.lineNumber).to,
-                message: result.ruleNames.join("/")
-                    + ": " + result.ruleDescription
-                    + " (" + result.ruleInformation + ")"
-                    + (result.errorDetail ? " [" + result.errorDetail + "]" : ""),
+                from: doc.line(error.lineNumber).from,
+                to: doc.line(error.lineNumber).to,
+                message: error.ruleNames.join("/")
+                    + ": " + error.ruleDescription
+                    + (error.errorDetail ? " [" + error.errorDetail + "]" : ""),
                 severity: 'error',
                 source: 'markdownlint',
             };
+            // if (error.fixInfo) {
+            //     if (fixInfo.in)
+            //     const action: Action = {
+            //         name: 'Fix ' + error.ruleNames.join("/"),
+            //         apply: (view, from, to) => {
+            //             console.log(from, to);
+            //         }
+            //     }
+            //     diagnostic.actions = [action];
+            // }
             diagnostics.push(diagnostic);
         }
 
-        if (fixable.length > 0) {
-            const fixed = this.doFixes(doc.toString(), fixable);
-            view.dispatch({ changes: { from: 0, to: doc.length, insert: fixed } });
-        }
         return diagnostics;
     };
 }

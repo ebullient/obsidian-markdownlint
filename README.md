@@ -25,6 +25,4 @@ This plugin supports a subset of files supported by [markdownlint-cli2](https://
 
 If one of the supported config files (listed above) is present, markdown files will be linted with markdownlint following the configured rules.
 
-1. Fixable issues will be automatically fixed (this will change your source).
-2. Issues that cannot be automatically fixed will be shown as decorations in Live Preview and Source modes.
-3. You can see all discovered issues in the console.
+Issues with your file will be highlighted in the editor for you to fix as you go.
