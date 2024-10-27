@@ -119,7 +119,6 @@ jobs:
         gh release create "${{ steps.build.outputs.version }}" \
             -F ./release-notes.md \
             --title "Release ${{ steps.build.outputs.version }}" \
-            --discussion-category "Announcements" \
             --verify-tag \
             --prerelease=${prerelease}
 
