@@ -1,7 +1,7 @@
-import { parseYaml, Plugin } from 'obsidian';
+import { editorInfoField, parseYaml, Plugin } from 'obsidian';
 import markdownlintLibrary, { Configuration, LintError, Options } from 'markdownlint';
-import { applyFixes } from 'markdownlint-rule-helpers';
-import { linter, Diagnostic, LintSource, Action } from "@codemirror/lint";
+import { applyFix, applyFixes } from 'markdownlint-rule-helpers';
+import { linter, Diagnostic, LintSource } from "@codemirror/lint";
 import { Extension } from '@codemirror/state';
 
 export class MarkdownlintPlugin extends Plugin {
@@ -75,6 +75,18 @@ export class MarkdownlintPlugin extends Plugin {
             }
         });
 
+        this.addCommand({
+            id: "fix-all-current-file",
+            name: "Fix markdown lint issues in the current file",
+            icon: "locate-fixed",
+            editorCallback: async (editor, ctx) => {
+                this.app.vault.process(ctx.file, (content) => {
+                    const results = this.doLint(ctx.file.name, content);
+                    return this.doFixes(content, results);
+                });
+            }
+        });
+
         // TODO: commands:
         // - provide default config file (setting)
     }
@@ -102,18 +114,17 @@ export class MarkdownlintPlugin extends Plugin {
         console.log('🛠️ markdownlint:', name, this.config);
     }
 
-    doLint(content: string): LintError[] {
+    doLint(name: string, content: string): LintError[] {
         const options: Options = {
             "strings": {
-                "content": content
+                [name]: content
             },
             "config": this.config,
             "handleRuleFailures": true
         };
         const lintResult = markdownlintLibrary.sync(options);
-        console.log('👀 LP Lint results', '\n'+lintResult.toString());
-
-        return lintResult.content;
+        console.log('👀 LP Lint results', '\n' + lintResult.toString());
+        return lintResult[name];
     }
 
     doFixes(content: string, results: LintError[]): string {
@@ -127,34 +138,66 @@ export class MarkdownlintPlugin extends Plugin {
     }
 
     // Hook into CodeMirror lint support
-    lintSource: LintSource = async (view) => {
+    lintSource: LintSource = async (editorView) => {
         if (!this.config) {
             return;
         }
-        const doc = view.state.doc;
+        const info = editorView.state.field(editorInfoField);
+        const doc = editorView.state.doc;
         const diagnostics: Diagnostic[] = [];
-        const lintErrors = this.doLint(doc.toString());
+        const content = doc.toString();
+        const lintErrors = this.doLint(info.file.name, content);
 
         for (const error of lintErrors) {
+            const line = doc.line(error.lineNumber);
+            const errFrom = error.errorRange ? line.from + error.errorRange[0] - 1 : line.from;
+            const errTo = error.errorRange ? errFrom + error.errorRange[1] : line.to;
+            // create a diagnostic / decoration
             const diagnostic: Diagnostic = {
-                from: doc.line(error.lineNumber).from,
-                to: doc.line(error.lineNumber).to,
+                from: errFrom,
+                to: errTo,
                 message: error.ruleNames.join("/")
                     + ": " + error.ruleDescription
                     + (error.errorDetail ? " [" + error.errorDetail + "]" : ""),
                 severity: 'error',
                 source: 'markdownlint',
             };
-            // if (error.fixInfo) {
-            //     if (fixInfo.in)
-            //     const action: Action = {
-            //         name: 'Fix ' + error.ruleNames.join("/"),
-            //         apply: (view, from, to) => {
-            //             console.log(from, to);
-            //         }
-            //     }
-            //     diagnostic.actions = [action];
-            // }
+            if (error.fixInfo) {
+                diagnostic.actions = [{
+                    name: 'Apply fix',
+                    apply: (view, from, to) => {
+                        // re-calculate the range, as the document may have changed
+                        const applyLine = view.state.doc.lineAt(from);
+                        const toFix = applyLine.text;
+                        const fixedText = applyFix(toFix, error.fixInfo, '\n');
+                        console.log('🔧 LP Applying fix', from, to, JSON.stringify({
+                                original: toFix,
+                                replaced: fixedText,
+                            }),
+                            error,
+                        );
+                        // https://codemirror.net/examples/change/
+                        // For insertions, to can be omitted, and for deletions, insert can be omitted.
+                        if (typeof fixedText === 'string') {
+                            view.dispatch({
+                                changes: {
+                                    from: applyLine.from,
+                                    to: applyLine.to,
+                                    insert: fixedText,
+                                },
+                            });
+                        } else if ( fixedText === null) {
+                            const deleteStart = from + error.fixInfo.deleteCount;
+                            view.dispatch({
+                                changes: {
+                                    from: deleteStart,
+                                    to: from,
+                                },
+                            });
+                        }
+                    }
+                }];
+            }
             diagnostics.push(diagnostic);
         }
 
