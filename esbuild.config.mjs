@@ -3,7 +3,6 @@ import process from "process";
 import builtins from 'builtin-modules';
 import { config } from "dotenv";
 import console from "node:console";
-import { copyFileSync } from "fs";
 
 config();
 
@@ -40,15 +39,6 @@ const parameters = {
     minify: prod,
     outdir: dir,
 };
-
-try {
-    copyFileSync("styles.css", `${dir}/styles.css`);
-    copyFileSync("manifest.json", `${dir}/manifest.json`);
-    copyFileSync("README.md", `${dir}/README.md`);
-} catch(e) {
-    console.error(e);
-}
-
 
 if (prod) {
     await esbuild.build(parameters).catch((x) => {

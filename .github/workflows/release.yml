@@ -31,6 +31,9 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     outputs:
       version: ${{ steps.build.outputs.version }}
     steps:
@@ -58,7 +61,7 @@ jobs:
         git config user.name ${{ env.GH_BOT_NAME }}
         git config user.email ${{ env.GH_BOT_EMAIL }}
 
-        npm install
+        npm ci
         if [[ "${{ github.event.inputs.retry }}" = "true" ]]; then
           npm run preversion
         else
