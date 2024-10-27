@@ -8,7 +8,6 @@ export class MarkdownlintPlugin extends Plugin {
     /** CodeMirror 6 extensions. Tracked via array to allow for dynamic updates. */
     private cmExtension: Extension[] = [];
 
-    private configFileGlob = /\.markdownlint.(json|yaml|yml)/;
     private configFileNames = [
         ".markdownlint.json",
         ".markdownlint.yaml",
