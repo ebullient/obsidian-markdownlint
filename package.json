@@ -1,6 +1,6 @@
 {
   "name": "obsidian-markdownlint",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Use markdownlint to make the contents of your files more consistent",
   "main": "main.js",
   "scripts": {
