@@ -22,7 +22,7 @@
     "@codemirror/lint": "^6.8.2",
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.34.1",
-    "markdownlint": "^0.35.0",
+    "markdownlint": "^0.36.1",
     "markdownlint-rule-helpers": "^0.26.0"
   },
   "devDependencies": {
