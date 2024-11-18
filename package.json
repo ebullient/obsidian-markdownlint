@@ -26,7 +26,7 @@
     "markdownlint-rule-helpers": "^0.27.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.14.0",
+    "@eslint/js": "^9.15.0",
     "@types/eslint__js": "^8.42.3",
     "@types/markdownlint-rule-helpers": "^0.21.5",
     "@types/node": "^22.8.7",
