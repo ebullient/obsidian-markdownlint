@@ -4,7 +4,10 @@
   "description": "Use markdownlint to make the contents of your files more consistent",
   "main": "main.js",
   "scripts": {
-    "prebuild": "npx eslint",
+    "fix": "npx @biomejs/biome check --write ./src",
+    "format": "npx @biomejs/biome format ./src",
+    "lint": "npx @biomejs/biome lint ./src",
+    "prebuild": "npx @biomejs/biome check ./src",
     "build": "node ./esbuild.config.mjs production",
     "postbuild": "cp -v manifest.json README.md styles.css build",
     "dev": "node ./esbuild.config.mjs",
@@ -26,8 +29,7 @@
     "markdownlint-rule-helpers": "^0.27.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.15.0",
-    "@types/eslint__js": "^8.42.3",
+    "@biomejs/biome": "1.9.4",
     "@types/markdownlint-rule-helpers": "^0.21.5",
     "@types/node": "^22.9.3",
     "auto-changelog": "^2.5.0",
@@ -36,11 +38,9 @@
     "esbuild": "^0.24.0",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-tsc": "^0.4.0",
-    "eslint": "^9.15.0",
     "obsidian": "^1.7.2",
     "tslib": "^2.8.1",
-    "typescript": "^5.7.2",
-    "typescript-eslint": "^8.14.0"
+    "typescript": "^5.7.2"
   },
   "auto-changelog": {
     "backfillLimit": false,
