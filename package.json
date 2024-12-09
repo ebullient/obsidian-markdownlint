@@ -19,7 +19,7 @@
   "author": "ebullient",
   "license": "MIT",
   "dependencies": {
-    "@codemirror/lint": "^6.8.2",
+    "@codemirror/lint": "^6.8.4",
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.34.3",
     "markdownlint": "^0.36.1",
