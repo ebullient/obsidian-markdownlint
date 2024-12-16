@@ -26,7 +26,7 @@
     "@codemirror/state": "^6.4.1",
     "@codemirror/view": "^6.34.3",
     "markdownlint": "^0.36.1",
-    "markdownlint-rule-helpers": "^0.27.0"
+    "markdownlint-rule-helpers": "^0.28.0"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
