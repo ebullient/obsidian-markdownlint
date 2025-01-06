@@ -1,11 +1,14 @@
 import { type Diagnostic, type LintSource, linter } from "@codemirror/lint";
 import type { Extension } from "@codemirror/state";
-import markdownlintLibrary, {
+import {
     type Configuration,
     type LintError,
     type Options,
+    applyFix,
+    applyFixes,
+    getVersion,
 } from "markdownlint";
-import { applyFix, applyFixes } from "markdownlint-rule-helpers";
+import { lint } from "markdownlint/sync";
 import { Plugin, editorInfoField, parseYaml } from "obsidian";
 
 export class MarkdownlintPlugin extends Plugin {
@@ -59,7 +62,7 @@ export class MarkdownlintPlugin extends Plugin {
     async onload(): Promise<void> {
         console.info(
             `loading Markdownlint v${this.manifest.version}`,
-            `using markdownlint v${markdownlintLibrary.getVersion()}`,
+            `using markdownlint v${getVersion()}`,
         );
 
         this.registerEditorExtension(this.cmExtension);
@@ -129,7 +132,7 @@ export class MarkdownlintPlugin extends Plugin {
             config: this.config,
             handleRuleFailures: true,
         };
-        const lintResult = markdownlintLibrary.sync(options);
+        const lintResult = lint(options);
         console.log("👀 LP Lint results", `\n${lintResult.toString()}`);
         return lintResult[name];
     }
