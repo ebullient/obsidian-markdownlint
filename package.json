@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "@codemirror/lint": "^6.8.2",
-    "@codemirror/state": "^6.4.1",
+    "@codemirror/state": "^6.5.1",
     "@codemirror/view": "^6.36.1",
     "markdownlint": "^0.37.3",
     "markdownlint-rule-helpers": "^0.28.0"
