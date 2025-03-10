@@ -31,7 +31,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@types/markdownlint-rule-helpers": "^0.21.5",
-    "@types/node": "^22.13.5",
+    "@types/node": "^22.13.10",
     "auto-changelog": "^2.5.0",
     "builtin-modules": "^5.0.0",
     "dotenv": "^16.4.5",
