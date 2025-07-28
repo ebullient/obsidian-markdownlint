@@ -1,15 +1,15 @@
 import { type Diagnostic, type LintSource, linter } from "@codemirror/lint";
 import type { Extension } from "@codemirror/state";
 import {
-    type Configuration,
-    type LintError,
-    type Options,
     applyFix,
     applyFixes,
+    type Configuration,
     getVersion,
+    type LintError,
+    type Options,
 } from "markdownlint";
 import { lint } from "markdownlint/sync";
-import { Plugin, editorInfoField, parseYaml } from "obsidian";
+import { editorInfoField, Plugin, parseYaml } from "obsidian";
 
 export class MarkdownlintPlugin extends Plugin {
     /** CodeMirror 6 extensions. Tracked via array to allow for dynamic updates. */
@@ -89,7 +89,7 @@ export class MarkdownlintPlugin extends Plugin {
             id: "fix-all-current-file",
             name: "Fix markdown lint issues in the current file",
             icon: "locate-fixed",
-            editorCallback: async (editor, ctx) => {
+            editorCallback: async (_editor, ctx) => {
                 this.app.vault.process(ctx.file, (content) => {
                     const results = this.doLint(ctx.file.name, content);
                     return this.doFixes(content, results);
