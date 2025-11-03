@@ -24,7 +24,7 @@
   "dependencies": {
     "@codemirror/lint": "^6.8.5",
     "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.38.2",
+    "@codemirror/view": "^6.38.4",
     "markdownlint": "^0.38.0",
     "markdownlint-rule-helpers": "^0.29.0"
   },
