@@ -25,11 +25,13 @@
     "@codemirror/lint": "^6.8.5",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.38.2",
+    "diff-match-patch": "^1.0.5",
     "markdownlint": "^0.38.0",
     "markdownlint-rule-helpers": "^0.29.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@types/diff-match-patch": "^1.0.36",
     "@types/markdownlint-rule-helpers": "^0.21.5",
     "@types/node": "^24.3.3",
     "auto-changelog": "^2.5.0",
@@ -47,8 +49,8 @@
     "commitLimit": false,
     "ignoreCommitPattern": "(🔖|🔨|🧹|changelog|release|Update README).*",
     "replaceText": {
-        "([;.,] [rR]esolves) #\\d+\\.?\\s*$": "$1",
-        "([;.,] [Ff]ixes) #\\d+\\.?\\s*$": "$1"
+      "([;.,] [rR]esolves) #\\d+\\.?\\s*$": "$1",
+      "([;.,] [Ff]ixes) #\\d+\\.?\\s*$": "$1"
     }
   }
 }
