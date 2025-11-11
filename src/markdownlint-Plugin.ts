@@ -82,7 +82,7 @@ export class MarkdownlintPlugin extends Plugin {
     };
 
     private originalSaveCallback?: (checking: boolean) => boolean | undefined =
-        null;
+        undefined;
 
     async onload(): Promise<void> {
         console.info(
@@ -128,24 +128,41 @@ export class MarkdownlintPlugin extends Plugin {
         const saveCommandDefinition =
             this.app.commands?.commands?.["editor:save-file"];
 
-        this.originalSaveCallback = saveCommandDefinition?.checkCallback;
+        if (saveCommandDefinition) {
+            this.originalSaveCallback = saveCommandDefinition.checkCallback;
 
-        saveCommandDefinition.checkCallback = (checking: boolean) => {
-            if (checking) return this.originalSaveCallback(checking);
+            saveCommandDefinition.checkCallback = (
+                checking: boolean,
+            ): boolean | undefined => {
+                if (!checking && this.settings.lintOnSave) {
+                    const view =
+                        this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (view) {
+                        try {
+                            const oldContent = view.editor.getValue();
+                            const results = this.doLint(
+                                view.file.name,
+                                oldContent,
+                            );
+                            const newContent = this.doFixes(
+                                oldContent,
+                                results,
+                            );
 
-            if (this.settings.lintOnSave) {
-                const view =
-                    this.app.workspace.getActiveViewOfType(MarkdownView);
+                            this.updateEditor(
+                                oldContent,
+                                newContent,
+                                view.editor,
+                            );
+                        } catch (error) {
+                            console.error("Lint on save failed", error);
+                        }
+                    }
+                }
 
-                const oldContent = view.editor.getValue();
-                const results = this.doLint(view.file.name, oldContent);
-                const newContent = this.doFixes(oldContent, results);
-
-                this.updateEditor(oldContent, newContent, view.editor);
-            }
-
-            return this.originalSaveCallback(checking);
-        };
+                return this.originalSaveCallback?.(checking);
+            };
+        }
 
         // TODO: commands:
         // - provide default config file (setting)
@@ -202,7 +219,6 @@ export class MarkdownlintPlugin extends Plugin {
             handleRuleFailures: true,
         };
         const lintResult = lint(options);
-        console.log("👀 LP Lint results", `\n${lintResult.toString()}`);
         return lintResult[name];
     }
 
