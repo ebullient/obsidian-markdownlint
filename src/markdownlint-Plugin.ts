@@ -1,5 +1,6 @@
 import { type Diagnostic, type LintSource, linter } from "@codemirror/lint";
-import type { Extension } from "@codemirror/state";
+import type { ChangeSpec, Extension } from "@codemirror/state";
+import DiffMatchPatch from "diff-match-patch";
 import {
     applyFix,
     applyFixes,
@@ -9,9 +10,30 @@ import {
     type Options,
 } from "markdownlint";
 import { lint } from "markdownlint/sync";
-import { editorInfoField, Plugin, parseYaml } from "obsidian";
+import {
+    type App,
+    type Editor,
+    editorInfoField,
+    MarkdownView,
+    Plugin,
+    PluginSettingTab,
+    parseYaml,
+    Setting,
+} from "obsidian";
+
+interface PluginSettings {
+    showDiagnostics: boolean;
+    lintOnSave: boolean;
+}
+
+const DEFAULT_SETTINGS: PluginSettings = {
+    showDiagnostics: true,
+    lintOnSave: false,
+};
 
 export class MarkdownlintPlugin extends Plugin {
+    public settings: PluginSettings;
+
     /** CodeMirror 6 extensions. Tracked via array to allow for dynamic updates. */
     private cmExtension: Extension[] = [];
 
@@ -59,11 +81,17 @@ export class MarkdownlintPlugin extends Plugin {
         MD042: false,
     };
 
+    private originalSaveCallback?: (checking: boolean) => boolean | undefined =
+        null;
+
     async onload(): Promise<void> {
         console.info(
             `loading Markdownlint v${this.manifest.version}`,
             `using markdownlint v${getVersion()}`,
         );
+
+        await this.loadSettings();
+        this.addSettingTab(new SettingTab(this.app, this));
 
         this.registerEditorExtension(this.cmExtension);
         this.cmExtension.push(
@@ -97,12 +125,53 @@ export class MarkdownlintPlugin extends Plugin {
             },
         });
 
+        const saveCommandDefinition =
+            this.app.commands?.commands?.["editor:save-file"];
+
+        this.originalSaveCallback = saveCommandDefinition?.checkCallback;
+
+        saveCommandDefinition.checkCallback = (checking: boolean) => {
+            if (checking) return this.originalSaveCallback(checking);
+
+            if (this.settings.lintOnSave) {
+                const view =
+                    this.app.workspace.getActiveViewOfType(MarkdownView);
+
+                const oldContent = view.editor.getValue();
+                const results = this.doLint(view.file.name, oldContent);
+                const newContent = this.doFixes(oldContent, results);
+
+                this.updateEditor(oldContent, newContent, view.editor);
+            }
+
+            return this.originalSaveCallback(checking);
+        };
+
         // TODO: commands:
         // - provide default config file (setting)
     }
 
     async onunload(): Promise<void> {
         this.cmExtension.length = 0;
+
+        const saveCommandDefinition =
+            this.app.commands?.commands?.["editor:save-file"];
+
+        if (saveCommandDefinition?.checkCallback && this.originalSaveCallback) {
+            saveCommandDefinition.checkCallback = this.originalSaveCallback;
+        }
+    }
+
+    async loadSettings() {
+        this.settings = Object.assign(
+            {},
+            DEFAULT_SETTINGS,
+            await this.loadData(),
+        );
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
     }
 
     async findConfig(): Promise<void> {
@@ -149,7 +218,7 @@ export class MarkdownlintPlugin extends Plugin {
 
     // Hook into CodeMirror lint support
     lintSource: LintSource = async (editorView) => {
-        if (!this.config) {
+        if (!this.config || !this.settings.showDiagnostics) {
             return;
         }
         const info = editorView.state.field(editorInfoField);
@@ -226,4 +295,101 @@ export class MarkdownlintPlugin extends Plugin {
 
         return diagnostics;
     };
+
+    // Based on https://github.com/platers/obsidian-linter/blob/master/src/main.ts#L857
+    //
+    // vault.process doesn't work while a requestSave event is being debounced.
+    // That's why we apply the changes using cm.dispatch instead.
+    //
+    // See: https://forum.obsidian.md/t/vault-process-and-vault-modify-dont-work-when-there-is-a-requestsave-debounce-event/107862
+    private updateEditor(
+        oldText: string,
+        newText: string,
+        editor: Editor,
+    ): DiffMatchPatch.Diff[] {
+        const dmp = new DiffMatchPatch.diff_match_patch();
+        const changes = dmp.diff_main(oldText, newText);
+
+        let curText = "";
+        changes.forEach((change) => {
+            const [type, value] = change;
+
+            if (type === DiffMatchPatch.DIFF_INSERT) {
+                editor.cm.dispatch({
+                    changes: [
+                        {
+                            from: editor.posToOffset(
+                                this.endOfDocument(curText),
+                            ),
+                            insert: value,
+                        } as ChangeSpec,
+                    ],
+                    filter: false,
+                });
+                curText += value;
+            } else if (type === DiffMatchPatch.DIFF_DELETE) {
+                const start = this.endOfDocument(curText);
+                let tempText = curText;
+                tempText += value;
+                const end = this.endOfDocument(tempText);
+                editor.cm.dispatch({
+                    changes: [
+                        {
+                            from: editor.posToOffset(start),
+                            to: editor.posToOffset(end),
+                            insert: "",
+                        } as ChangeSpec,
+                    ],
+                    filter: false,
+                });
+            } else {
+                curText += value;
+            }
+        });
+
+        return changes;
+    }
+
+    private endOfDocument(doc: string) {
+        const lines = doc.split("\n");
+        return { line: lines.length - 1, ch: lines[lines.length - 1].length };
+    }
+}
+
+class SettingTab extends PluginSettingTab {
+    plugin: MarkdownlintPlugin;
+
+    constructor(app: App, plugin: MarkdownlintPlugin) {
+        super(app, plugin);
+        this.plugin = plugin;
+    }
+
+    display(): void {
+        const { containerEl } = this;
+        containerEl.empty();
+
+        new Setting(containerEl) //
+            .setName("Show Diagnostics")
+            .addToggle((toggle) =>
+                toggle //
+                    .setValue(this.plugin.settings.showDiagnostics)
+                    .onChange((value) => {
+                        this.plugin.settings.showDiagnostics = value;
+                        this.plugin.saveSettings();
+                        this.display();
+                    }),
+            );
+
+        new Setting(containerEl) //
+            .setName("Lint on Save")
+            .addToggle((toggle) =>
+                toggle //
+                    .setValue(this.plugin.settings.lintOnSave)
+                    .onChange((value) => {
+                        this.plugin.settings.lintOnSave = value;
+                        this.plugin.saveSettings();
+                        this.display();
+                    }),
+            );
+    }
 }
