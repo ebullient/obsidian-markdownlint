@@ -22,7 +22,7 @@
   "author": "ebullient",
   "license": "MIT",
   "dependencies": {
-    "markdownlint": "^0.38.0",
+    "markdownlint": "^0.39.0",
     "markdownlint-rule-helpers": "^0.29.0"
   },
   "devDependencies": {
