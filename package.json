@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "markdownlint": "^0.39.0",
-    "markdownlint-rule-helpers": "^0.29.0"
+    "markdownlint-rule-helpers": "^0.30.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
