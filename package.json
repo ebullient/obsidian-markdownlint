@@ -26,7 +26,7 @@
     "markdownlint-rule-helpers": "^0.30.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.2.4",
+    "@biomejs/biome": "2.3.4",
     "@types/markdownlint-rule-helpers": "^0.21.5",
     "@types/node": "^24.10.0",
     "auto-changelog": "^2.5.0",
