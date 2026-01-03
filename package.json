@@ -35,7 +35,9 @@
     "esbuild": "^0.27.0",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-tsc": "^0.5.0",
-    "obsidian": "^1.10.2",
+    "markdownlint": "^0.38.0",
+    "markdownlint-rule-helpers": "^0.29.0",
+    "obsidian": "^1.11.0",
     "tslib": "^2.8.1",
     "typescript": "^5.9.3"
   },
