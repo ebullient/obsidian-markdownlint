@@ -4,6 +4,7 @@
 
 # VS Code
 .vscode
+settings.local.json
 
 # npm
 node_modules
@@ -14,3 +15,5 @@ build
 
 # obsidian
 data.json
+references
+*.out

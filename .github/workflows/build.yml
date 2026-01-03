@@ -1,23 +1,27 @@
 name: Build and Test Obsidian Plugin
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
     paths:
       - '**.ts'
       - '**.json'
       - '**.mjs'
+      - '**.scss'
       - '**.css'
   pull_request:
-    branches: [ main ]
     paths:
       - '**.ts'
       - '**.json'
       - '**.mjs'
+      - '**.scss'
       - '**.css'
 
 permissions: read-all
+
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
@@ -32,5 +36,6 @@ jobs:
     - name: Build and Test
       id: build
       run: |
-        npm install
+        npm ci
         npm run build
+        # npm run test
