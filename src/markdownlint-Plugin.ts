@@ -11,25 +11,17 @@ import {
 } from "markdownlint";
 import { lint } from "markdownlint/sync";
 import {
-    type App,
     type Editor,
     editorInfoField,
     MarkdownView,
     Plugin,
-    PluginSettingTab,
     parseYaml,
-    Setting,
 } from "obsidian";
-
-interface PluginSettings {
-    showDiagnostics: boolean;
-    lintOnSave: boolean;
-}
-
-const DEFAULT_SETTINGS: PluginSettings = {
-    showDiagnostics: true,
-    lintOnSave: false,
-};
+import {
+    DEFAULT_SETTINGS,
+    MarkdownlintSettingsTab,
+    type PluginSettings,
+} from "./markdownlint-SettingsTab";
 
 export class MarkdownlintPlugin extends Plugin {
     public settings: PluginSettings;
@@ -91,7 +83,7 @@ export class MarkdownlintPlugin extends Plugin {
         );
 
         await this.loadSettings();
-        this.addSettingTab(new SettingTab(this.app, this));
+        this.addSettingTab(new MarkdownlintSettingsTab(this.app, this));
 
         this.registerEditorExtension(this.cmExtension);
         this.cmExtension.push(
@@ -118,8 +110,12 @@ export class MarkdownlintPlugin extends Plugin {
             name: "Fix markdown lint issues in the current file",
             icon: "locate-fixed",
             editorCallback: async (_editor, ctx) => {
-                this.app.vault.process(ctx.file, (content) => {
-                    const results = this.doLint(ctx.file.name, content);
+                if (!ctx.file) {
+                    return;
+                }
+                const file = ctx.file;
+                this.app.vault.process(file, (content) => {
+                    const results = this.doLint(file.name, content);
                     return this.doFixes(content, results);
                 });
             },
@@ -137,7 +133,7 @@ export class MarkdownlintPlugin extends Plugin {
                 if (!checking && this.settings.lintOnSave) {
                     const view =
                         this.app.workspace.getActiveViewOfType(MarkdownView);
-                    if (view) {
+                    if (view?.file) {
                         try {
                             const oldContent = view.editor.getValue();
                             const results = this.doLint(
@@ -235,9 +231,12 @@ export class MarkdownlintPlugin extends Plugin {
     // Hook into CodeMirror lint support
     lintSource: LintSource = async (editorView) => {
         if (!this.config || !this.settings.showDiagnostics) {
-            return;
+            return [];
         }
         const info = editorView.state.field(editorInfoField);
+        if (!info.file) {
+            return [];
+        }
         const doc = editorView.state.doc;
         const diagnostics: Diagnostic[] = [];
         const content = doc.toString();
@@ -260,6 +259,7 @@ export class MarkdownlintPlugin extends Plugin {
                 source: "markdownlint",
             };
             if (error.fixInfo) {
+                const fixInfo = error.fixInfo;
                 diagnostic.actions = [
                     {
                         name: "Apply fix",
@@ -267,11 +267,7 @@ export class MarkdownlintPlugin extends Plugin {
                             // re-calculate the range, as the document may have changed
                             const applyLine = view.state.doc.lineAt(from);
                             const toFix = applyLine.text;
-                            const fixedText = applyFix(
-                                toFix,
-                                error.fixInfo,
-                                "\n",
-                            );
+                            const fixedText = applyFix(toFix, fixInfo, "\n");
                             console.log(
                                 "🔧 LP Applying fix",
                                 from,
@@ -292,9 +288,11 @@ export class MarkdownlintPlugin extends Plugin {
                                         insert: fixedText,
                                     },
                                 });
-                            } else if (fixedText === null) {
-                                const deleteStart =
-                                    from + error.fixInfo.deleteCount;
+                            } else if (
+                                fixedText === null &&
+                                fixInfo.deleteCount !== undefined
+                            ) {
+                                const deleteStart = from + fixInfo.deleteCount;
                                 view.dispatch({
                                     changes: {
                                         from: deleteStart,
@@ -326,11 +324,15 @@ export class MarkdownlintPlugin extends Plugin {
         const dmp = new DiffMatchPatch.diff_match_patch();
         const changes = dmp.diff_main(oldText, newText);
 
+        if (!editor.cm) {
+            return changes;
+        }
+
         let curText = "";
         changes.forEach((change) => {
             const [type, value] = change;
 
-            if (type === DiffMatchPatch.DIFF_INSERT) {
+            if (type === DiffMatchPatch.DIFF_INSERT && editor.cm) {
                 editor.cm.dispatch({
                     changes: [
                         {
@@ -343,7 +345,7 @@ export class MarkdownlintPlugin extends Plugin {
                     filter: false,
                 });
                 curText += value;
-            } else if (type === DiffMatchPatch.DIFF_DELETE) {
+            } else if (type === DiffMatchPatch.DIFF_DELETE && editor.cm) {
                 const start = this.endOfDocument(curText);
                 let tempText = curText;
                 tempText += value;
@@ -369,43 +371,5 @@ export class MarkdownlintPlugin extends Plugin {
     private endOfDocument(doc: string) {
         const lines = doc.split("\n");
         return { line: lines.length - 1, ch: lines[lines.length - 1].length };
-    }
-}
-
-class SettingTab extends PluginSettingTab {
-    plugin: MarkdownlintPlugin;
-
-    constructor(app: App, plugin: MarkdownlintPlugin) {
-        super(app, plugin);
-        this.plugin = plugin;
-    }
-
-    display(): void {
-        const { containerEl } = this;
-        containerEl.empty();
-
-        new Setting(containerEl) //
-            .setName("Show Diagnostics")
-            .addToggle((toggle) =>
-                toggle //
-                    .setValue(this.plugin.settings.showDiagnostics)
-                    .onChange((value) => {
-                        this.plugin.settings.showDiagnostics = value;
-                        this.plugin.saveSettings();
-                        this.display();
-                    }),
-            );
-
-        new Setting(containerEl) //
-            .setName("Lint on Save")
-            .addToggle((toggle) =>
-                toggle //
-                    .setValue(this.plugin.settings.lintOnSave)
-                    .onChange((value) => {
-                        this.plugin.settings.lintOnSave = value;
-                        this.plugin.saveSettings();
-                        this.display();
-                    }),
-            );
     }
 }
