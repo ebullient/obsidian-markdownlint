@@ -24,7 +24,7 @@
   "repository": "github.com:ebullient/obsidian-markdownlint",
   "license": "MIT",
   "dependencies": {
-    "markdownlint": "^0.39.0",
+    "markdownlint": "^0.40.0",
     "markdownlint-rule-helpers": "^0.30.0"
   },
   "devDependencies": {
