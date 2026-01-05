@@ -77,7 +77,7 @@ export class MarkdownlintPlugin extends Plugin {
         undefined;
 
     async onload(): Promise<void> {
-        console.info(
+        console.debug(
             `loading Markdownlint v${this.manifest.version}`,
             `using markdownlint v${getVersion()}`,
         );
@@ -98,7 +98,7 @@ export class MarkdownlintPlugin extends Plugin {
 
         this.addCommand({
             id: "reload-config",
-            name: "Reload Configuration",
+            name: "Reload configuration",
             icon: "monitor-cog",
             callback: async () => {
                 await this.findConfig();
@@ -160,8 +160,14 @@ export class MarkdownlintPlugin extends Plugin {
             };
         }
 
-        // TODO: commands:
-        // - provide default config file (setting)
+        this.addCommand({
+            id: "create-default-config",
+            name: "Create default config file",
+            icon: "file-plus",
+            callback: async () => {
+                await this.createDefaultConfig();
+            },
+        });
     }
 
     async onunload(): Promise<void> {
@@ -188,22 +194,75 @@ export class MarkdownlintPlugin extends Plugin {
     }
 
     async findConfig(): Promise<void> {
+        // Check if user specified a config file path
+        if (this.settings.configFilePath) {
+            if (
+                await this.app.vault.adapter.exists(
+                    this.settings.configFilePath,
+                )
+            ) {
+                return this.loadConfig(this.settings.configFilePath);
+            }
+            console.debug(
+                `🤷 markdownlint: specified config file not found: ${this.settings.configFilePath}`,
+            );
+            return;
+        }
+
+        // Auto-detect config file in vault root
         for (const name of this.configFileNames) {
             if (await this.app.vault.adapter.exists(name)) {
                 return this.loadConfig(name);
             }
         }
-        console.log("🤷 markdownlint: no configuration file found");
+        console.debug(
+            "🤷 markdownlint: no configuration file found, using default config",
+        );
     }
 
     async loadConfig(name: string): Promise<void> {
         const content = await this.app.vault.adapter.read(name);
-        if (name.endsWith(".json")) {
+        if (name.endsWith(".json") || name.includes("json")) {
             this.config = JSON.parse(content);
-        } else if (name.endsWith(".yaml") || name.endsWith(".yml")) {
+        } else if (
+            name.endsWith(".yaml") ||
+            name.endsWith(".yml") ||
+            name.includes("yaml") ||
+            name.includes("yml")
+        ) {
             this.config = parseYaml(content);
+        } else {
+            // Try JSON first, fall back to YAML
+            try {
+                this.config = JSON.parse(content);
+            } catch {
+                this.config = parseYaml(content);
+            }
         }
-        console.log("🛠️ markdownlint:", name, this.config);
+        console.debug("🛠️ markdownlint:", name, this.config);
+    }
+
+    async createDefaultConfig(): Promise<void> {
+        const configPath =
+            this.settings.configFilePath || "markdownlint-config.json";
+
+        if (await this.app.vault.adapter.exists(configPath)) {
+            console.debug(`Config file already exists: ${configPath}`);
+            return;
+        }
+
+        const defaultConfig = JSON.stringify(this.config, null, 2);
+        await this.app.vault.adapter.write(configPath, defaultConfig);
+        console.debug(`Created default config file: ${configPath}`);
+
+        // Update settings to use this config file
+        if (!this.settings.configFilePath) {
+            this.settings.configFilePath = configPath;
+            await this.saveSettings();
+        }
+
+        // Reload the config
+        await this.findConfig();
     }
 
     doLint(name: string, content: string): LintError[] {
@@ -268,7 +327,7 @@ export class MarkdownlintPlugin extends Plugin {
                             const applyLine = view.state.doc.lineAt(from);
                             const toFix = applyLine.text;
                             const fixedText = applyFix(toFix, fixInfo, "\n");
-                            console.log(
+                            console.debug(
                                 "🔧 LP Applying fix",
                                 from,
                                 to,
