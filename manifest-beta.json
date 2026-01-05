@@ -1,7 +1,7 @@
 {
 	"id": "markdownlint",
 	"name": "Markdownlint",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"minAppVersion": "1.9.0",
 	"description": "Use markdownlint to make the contents of your files more consistent",
 	"author": "ebullient",
