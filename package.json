@@ -32,7 +32,7 @@
     "@codemirror/lint": "^6.9.2",
     "@types/diff-match-patch": "^1.0.36",
     "@types/markdownlint-rule-helpers": "^0.21.6",
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.0.6",
     "auto-changelog": "^2.5.0",
     "builtin-modules": "^5.0.0",
     "diff-match-patch": "^1.0.5",
