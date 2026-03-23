@@ -2,7 +2,7 @@
 
 This plugin uses the [markdownlint](https://github.com/DavidAnson/markdownlint) library to lint files in your vault.
 
-This plugin supports a subset of files supported by [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2). Specifically `.markdownlint.json`, `.markdownlint.yaml`, or `.markdownlint.yml`.[^1]
+This plugin supports a subset of files supported by [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2). Specifically `.markdownlint.jsonc`, `.markdownlint.json`, `.markdownlint.yaml`, or `.markdownlint.yml`.[^1]
 
 [^1]: Other formats require interpretation or use parsers that don't work well as an Obsidian plugin, in my experience. If you have a favorite format beyond these few, I welcome your help in making it work. Otherwise, it is what it is.
 
