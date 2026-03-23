@@ -1,6 +1,7 @@
 import { type Diagnostic, type LintSource, linter } from "@codemirror/lint";
 import type { ChangeSpec, Extension } from "@codemirror/state";
 import DiffMatchPatch from "diff-match-patch";
+import { stripComments } from "jsonc-parser";
 import {
     applyFix,
     applyFixes,
@@ -30,6 +31,7 @@ export class MarkdownlintPlugin extends Plugin {
     private cmExtension: Extension[] = [];
 
     private configFileNames = [
+        ".markdownlint.jsonc",
         ".markdownlint.json",
         ".markdownlint.yaml",
         ".markdownlint.yml",
@@ -222,8 +224,13 @@ export class MarkdownlintPlugin extends Plugin {
 
     async loadConfig(name: string): Promise<void> {
         const content = await this.app.vault.adapter.read(name);
-        if (name.endsWith(".json") || name.includes("json")) {
-            this.config = JSON.parse(content);
+        if (
+            name.endsWith(".jsonc") ||
+            name.endsWith(".json") ||
+            name.includes("json")
+        ) {
+            const strippedContent = stripComments(content);
+            this.config = JSON.parse(strippedContent);
         } else if (
             name.endsWith(".yaml") ||
             name.endsWith(".yml") ||
@@ -234,7 +241,8 @@ export class MarkdownlintPlugin extends Plugin {
         } else {
             // Try JSON first, fall back to YAML
             try {
-                this.config = JSON.parse(content);
+                const strippedContent = stripComments(content);
+                this.config = JSON.parse(strippedContent);
             } catch {
                 this.config = parseYaml(content);
             }
