@@ -101,8 +101,7 @@ jobs:
         mv build "$REPO_NAME"
         zip -r "${REPO_NAME}-${RELEASE_VERSION}.zip" "$REPO_NAME"
         unzip -j "${REPO_NAME}-${RELEASE_VERSION}.zip" \
-            "$REPO_NAME/main.js" \
-            "$REPO_NAME/styles.css"
+            "$REPO_NAME/main.js"
 
     # Attest build provenance for release artifacts
     - name: Attest build artifacts
