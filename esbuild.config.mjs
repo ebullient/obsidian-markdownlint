@@ -32,6 +32,7 @@ const parameters = {
     ],
     format: 'cjs',
     logLevel: 'info',
+    mainFields: ['module', 'main'],
     platform: 'node',
     target: 'es2020',
     treeShaking: true,
