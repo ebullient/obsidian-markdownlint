@@ -3,7 +3,7 @@
 	"name": "Markdownlint",
 	"version": "1.0.0",
 	"minAppVersion": "1.9.0",
-	"description": "Use markdownlint to make the contents of your files more consistent",
+	"description": "Use markdownlint to make the contents of your files more consistent.",
 	"author": "ebullient",
 	"authorUrl": "https://github.com/ebullient",
   "fundingUrl": "https://buymeacoffee.com/ebullient",
