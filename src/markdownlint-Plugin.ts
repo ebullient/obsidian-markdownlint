@@ -1,5 +1,5 @@
 import { type Diagnostic, type LintSource, linter } from "@codemirror/lint";
-import type { ChangeSpec, Extension } from "@codemirror/state";
+import type { Extension } from "@codemirror/state";
 import DiffMatchPatch from "diff-match-patch";
 import { stripComments } from "jsonc-parser";
 import {
@@ -116,7 +116,7 @@ export class MarkdownlintPlugin extends Plugin {
                     return;
                 }
                 const file = ctx.file;
-                this.app.vault.process(file, (content) => {
+                void this.app.vault.process(file, (content) => {
                     const results = this.doLint(file.name, content);
                     return this.doFixes(content, results);
                 });
@@ -127,7 +127,13 @@ export class MarkdownlintPlugin extends Plugin {
             this.app.commands?.commands?.["editor:save-file"];
 
         if (saveCommandDefinition) {
-            this.originalSaveCallback = saveCommandDefinition.checkCallback;
+            this.originalSaveCallback = saveCommandDefinition.checkCallback
+                ? (checking: boolean) =>
+                      saveCommandDefinition.checkCallback?.call(
+                          saveCommandDefinition,
+                          checking,
+                      ) as boolean | undefined
+                : undefined;
 
             saveCommandDefinition.checkCallback = (
                 checking: boolean,
@@ -172,7 +178,7 @@ export class MarkdownlintPlugin extends Plugin {
         });
     }
 
-    async onunload(): Promise<void> {
+    onunload(): void {
         this.cmExtension.length = 0;
 
         const saveCommandDefinition =
@@ -187,7 +193,7 @@ export class MarkdownlintPlugin extends Plugin {
         this.settings = Object.assign(
             {},
             DEFAULT_SETTINGS,
-            await this.loadData(),
+            (await this.loadData()) as Partial<PluginSettings>,
         );
     }
 
@@ -230,21 +236,21 @@ export class MarkdownlintPlugin extends Plugin {
             name.includes("json")
         ) {
             const strippedContent = stripComments(content);
-            this.config = JSON.parse(strippedContent);
+            this.config = JSON.parse(strippedContent) as Configuration;
         } else if (
             name.endsWith(".yaml") ||
             name.endsWith(".yml") ||
             name.includes("yaml") ||
             name.includes("yml")
         ) {
-            this.config = parseYaml(content);
+            this.config = parseYaml(content) as Configuration;
         } else {
             // Try JSON first, fall back to YAML
             try {
                 const strippedContent = stripComments(content);
-                this.config = JSON.parse(strippedContent);
+                this.config = JSON.parse(strippedContent) as Configuration;
             } catch {
-                this.config = parseYaml(content);
+                this.config = parseYaml(content) as Configuration;
             }
         }
         console.debug("🛠️ markdownlint:", name, this.config);
@@ -407,7 +413,7 @@ export class MarkdownlintPlugin extends Plugin {
                                 this.endOfDocument(curText),
                             ),
                             insert: value,
-                        } as ChangeSpec,
+                        },
                     ],
                     filter: false,
                 });
@@ -423,7 +429,7 @@ export class MarkdownlintPlugin extends Plugin {
                             from: editor.posToOffset(start),
                             to: editor.posToOffset(end),
                             insert: "",
-                        } as ChangeSpec,
+                        },
                     ],
                     filter: false,
                 });
