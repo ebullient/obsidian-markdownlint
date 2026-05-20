@@ -78,6 +78,8 @@ export class MarkdownlintPlugin extends Plugin {
     private originalSaveCallback?: (checking: boolean) => boolean | undefined =
         undefined;
 
+    private static readonly SAVE_WRAPPER_TAG = "__markdownlint_wrapped__";
+
     async onload(): Promise<void> {
         console.debug(
             `loading Markdownlint v${this.manifest.version}`,
@@ -127,17 +129,27 @@ export class MarkdownlintPlugin extends Plugin {
             this.app.commands?.commands?.["editor:save-file"];
 
         if (saveCommandDefinition) {
-            this.originalSaveCallback = saveCommandDefinition.checkCallback
+            const existing = saveCommandDefinition.checkCallback;
+            // If already wrapped (e.g. hot-reload), unwrap to get the real original
+            const existingAsObj = existing as unknown as Record<
+                string,
+                unknown
+            >;
+            const taggedOriginal =
+                existing && MarkdownlintPlugin.SAVE_WRAPPER_TAG in existingAsObj
+                    ? (existingAsObj[MarkdownlintPlugin.SAVE_WRAPPER_TAG] as (
+                          checking: boolean,
+                      ) => boolean | undefined)
+                    : undefined;
+            const unwrapped = taggedOriginal ?? existing;
+            this.originalSaveCallback = unwrapped
                 ? (checking: boolean) =>
-                      saveCommandDefinition.checkCallback?.call(
-                          saveCommandDefinition,
-                          checking,
-                      ) as boolean | undefined
+                      unwrapped.call(saveCommandDefinition, checking) as
+                          | boolean
+                          | undefined
                 : undefined;
 
-            saveCommandDefinition.checkCallback = (
-                checking: boolean,
-            ): boolean | undefined => {
+            const wrapper = (checking: boolean): boolean | undefined => {
                 if (!checking && this.settings.lintOnSave) {
                     const view =
                         this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -166,6 +178,10 @@ export class MarkdownlintPlugin extends Plugin {
 
                 return this.originalSaveCallback?.(checking);
             };
+            (wrapper as unknown as Record<string, unknown>)[
+                MarkdownlintPlugin.SAVE_WRAPPER_TAG
+            ] = this.originalSaveCallback;
+            saveCommandDefinition.checkCallback = wrapper;
         }
 
         this.addCommand({
