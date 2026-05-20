@@ -4,7 +4,7 @@
   "description": "Use markdownlint to make the contents of your files more consistent",
   "main": "main.js",
   "scripts": {
-    "dev": "node esbuild.config.mjs",
+    "dev": "node --env-file-if-exists=.env esbuild.config.mjs",
     "fix": "npx @biomejs/biome check --write ./src",
     "format": "npx @biomejs/biome format ./src",
     "eslint": "npx eslint",
@@ -34,9 +34,7 @@
     "@types/markdownlint-rule-helpers": "^0.21.6",
     "@types/node": "^25.0.9",
     "auto-changelog": "^2.5.0",
-    "builtin-modules": "^5.0.0",
     "diff-match-patch": "^1.0.5",
-    "dotenv": "^17.3.1",
     "esbuild": "^0.28.0",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-tsc": "^0.6.0",
