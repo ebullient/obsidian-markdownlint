@@ -56,6 +56,22 @@ export class MarkdownlintSettingsTab extends PluginSettingTab {
                 desc: "Automatically fix markdownlint issues when saving files",
                 control: { type: "toggle", key: "lintOnSave" },
             },
+            {
+                name: "",
+                render: (setting: Setting) => {
+                    setting.descEl.addClass("markdownlint-coffee");
+                    setting.descEl
+                        .createEl("a", {
+                            href: "https://www.buymeacoffee.com/ebullient",
+                        })
+                        .createEl("img", {
+                            attr: {
+                                src: "https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=ebullient&button_colour=8e6787&font_colour=ebebeb&font_family=Inter&outline_colour=392a37&coffee_colour=ecc986",
+                                height: "30px",
+                            },
+                        });
+                },
+            },
         ];
     }
 
