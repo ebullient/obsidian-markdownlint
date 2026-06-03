@@ -1,4 +1,9 @@
-import { type App, PluginSettingTab, Setting } from "obsidian";
+import {
+    type App,
+    PluginSettingTab,
+    Setting,
+    type SettingDefinitionItem,
+} from "obsidian";
 import type { MarkdownlintPlugin } from "./markdownlint-Plugin";
 
 export interface PluginSettings {
@@ -15,7 +20,6 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 
 export class MarkdownlintSettingsTab extends PluginSettingTab {
     plugin: MarkdownlintPlugin;
-    newSettings!: PluginSettings;
 
     constructor(app: App, plugin: MarkdownlintPlugin) {
         super(app, plugin);
@@ -23,27 +27,40 @@ export class MarkdownlintSettingsTab extends PluginSettingTab {
         this.icon = "spell-check-2";
     }
 
-    async save() {
-        this.plugin.settings = this.newSettings;
-        await this.plugin.saveSettings();
+    // Obsidian 1.13.0+: framework uses this and skips display().
+    getSettingDefinitions(): SettingDefinitionItem[] {
+        return [
+            {
+                name: "Config file path",
+                desc: "Path to config file (use visible names like markdownlint-config.json to sync across devices, or leave empty to auto-detect hidden files)",
+                render: (setting: Setting) => {
+                    setting.addText((text) =>
+                        text
+                            .setPlaceholder("markdownlint-config.json")
+                            .setValue(this.plugin.settings.configFilePath)
+                            .onChange(async (value) => {
+                                this.plugin.settings.configFilePath = value;
+                                await this.plugin.saveSettings();
+                                await this.plugin.findConfig();
+                            }),
+                    );
+                },
+            },
+            {
+                name: "Show diagnostics",
+                desc: "Display markdownlint issues inline in the editor",
+                control: { type: "toggle", key: "showDiagnostics" },
+            },
+            {
+                name: "Lint on save",
+                desc: "Automatically fix markdownlint issues when saving files",
+                control: { type: "toggle", key: "lintOnSave" },
+            },
+        ];
     }
 
-    private cloneSettings(): PluginSettings {
-        return JSON.parse(
-            JSON.stringify(this.plugin.settings),
-        ) as PluginSettings;
-    }
-
-    reset() {
-        this.newSettings = this.cloneSettings();
-        this.display();
-    }
-
+    // Obsidian < 1.13.0 fallback.
     display(): void {
-        if (!this.newSettings) {
-            this.newSettings = this.cloneSettings();
-        }
-
         const { containerEl } = this;
         containerEl.empty();
 
@@ -55,10 +72,10 @@ export class MarkdownlintSettingsTab extends PluginSettingTab {
             .addText((text) =>
                 text
                     .setPlaceholder("markdownlint-config.json")
-                    .setValue(this.newSettings.configFilePath)
+                    .setValue(this.plugin.settings.configFilePath)
                     .onChange(async (value) => {
-                        this.newSettings.configFilePath = value;
-                        await this.save();
+                        this.plugin.settings.configFilePath = value;
+                        await this.plugin.saveSettings();
                         await this.plugin.findConfig();
                     }),
             );
@@ -68,9 +85,10 @@ export class MarkdownlintSettingsTab extends PluginSettingTab {
             .setDesc("Display markdownlint issues inline in the editor")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.newSettings.showDiagnostics)
-                    .onChange((value) => {
-                        this.newSettings.showDiagnostics = value;
+                    .setValue(this.plugin.settings.showDiagnostics)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showDiagnostics = value;
+                        await this.plugin.saveSettings();
                     }),
             );
 
@@ -79,15 +97,11 @@ export class MarkdownlintSettingsTab extends PluginSettingTab {
             .setDesc("Automatically fix markdownlint issues when saving files")
             .addToggle((toggle) =>
                 toggle
-                    .setValue(this.newSettings.lintOnSave)
-                    .onChange((value) => {
-                        this.newSettings.lintOnSave = value;
+                    .setValue(this.plugin.settings.lintOnSave)
+                    .onChange(async (value) => {
+                        this.plugin.settings.lintOnSave = value;
+                        await this.plugin.saveSettings();
                     }),
             );
-    }
-
-    /** Save on exit */
-    hide(): void {
-        void this.save();
     }
 }
