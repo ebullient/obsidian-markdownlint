@@ -35,7 +35,7 @@
     "@types/node": "^25.8.0",
     "auto-changelog": "^2.6.0",
     "diff-match-patch": "^1.0.5",
-    "esbuild": "^0.28.0",
+    "esbuild": "^0.28.1",
     "esbuild-plugin-copy": "^2.1.1",
     "esbuild-plugin-tsc": "^0.6.0",
     "eslint": "^9.0.0",
