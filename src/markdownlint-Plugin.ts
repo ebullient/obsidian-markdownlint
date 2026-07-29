@@ -136,7 +136,7 @@ export class MarkdownlintPlugin extends Plugin {
                 unknown
             >;
             const taggedOriginal =
-                existing && MarkdownlintPlugin.SAVE_WRAPPER_TAG in existingAsObj
+                MarkdownlintPlugin.SAVE_WRAPPER_TAG in existingAsObj
                     ? (existingAsObj[MarkdownlintPlugin.SAVE_WRAPPER_TAG] as (
                           checking: boolean,
                       ) => boolean | undefined)
@@ -144,9 +144,7 @@ export class MarkdownlintPlugin extends Plugin {
             const unwrapped = taggedOriginal ?? existing;
             this.originalSaveCallback = unwrapped
                 ? (checking: boolean) =>
-                      unwrapped.call(saveCommandDefinition, checking) as
-                          | boolean
-                          | undefined
+                      unwrapped.call(saveCommandDefinition, checking)
                 : undefined;
 
             const wrapper = (checking: boolean): boolean | undefined => {
@@ -323,7 +321,7 @@ export class MarkdownlintPlugin extends Plugin {
             return [];
         }
         const info = editorView.state.field(editorInfoField);
-        if (!info.file) {
+        if (!info?.file) {
             return [];
         }
         const doc = editorView.state.doc;

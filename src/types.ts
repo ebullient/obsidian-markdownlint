@@ -3,7 +3,7 @@ import type { EditorView } from "@codemirror/view";
 export interface ObsidianCommandInterface {
     commands: {
         "editor:save-file": {
-            checkCallback(checking: boolean): boolean | undefined;
+            checkCallback: (checking: boolean) => boolean | undefined;
         };
     };
 }
