@@ -111,7 +111,7 @@ export class MarkdownlintPlugin extends Plugin {
 
         this.addCommand({
             id: "fix-all-current-file",
-            name: "Fix markdown lint issues in the current file",
+            name: "Fix Markdown lint issues in the current file",
             icon: "locate-fixed",
             editorCallback: async (_editor, ctx) => {
                 if (!ctx.file) {
