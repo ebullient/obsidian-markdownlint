@@ -47,7 +47,8 @@
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "markdown-it": "14.3.0"
+    "markdown-it": "14.3.0",
+    "moment": "2.31.0"
   },
   "auto-changelog": {
     "backfillLimit": false,
